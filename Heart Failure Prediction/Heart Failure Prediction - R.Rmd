@@ -1,0 +1,203 @@
+---
+title: "Heart Failure Prediction"
+author: "Kolekar, Ajit"
+output:
+  
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Coherent narrative
+
+The most common cause of death globally is Cardiovascular Diseases. Approximately 18 million people die due to Cardiovascular Diseases every year, which is around 31% of all deaths. Heart failure is the most common event that can be caused by Cardiovascular Diseases. There are various factors that can contribute to Cardiovascular Diseases. Through this project, I analyzed the factors that contribute to Cardiovascular Diseases and attempted to predict the preventative measures that need to be taken to avoid heart attacks.
+
+In order to achieve the objectives of the project, I used the dataset located at https://www.kaggle.com/andrewmvd/heart-failure-clinical-data. 
+
+
+```{r}
+heart_df <- read.csv("heart_failure_clinical_records_dataset.csv")
+str(heart_df)
+```
+
+The dataset includes data of 299 patients. It has following 13 columns and their description.
+
+* age - Age of the patient (Numeric value)
+* anaemia - Decrease of red blood cells or hemoglobin (Boolean value - 0 for No and 1 for Yes)
+* creatinine_phosphokinase - Level of the CPK enzyme in the blood (Integer value - mcg/L)
+* diabetes - If the patient has diabetes (Boolean value - 0 for No and 1 for Yes)
+* ejection_fraction - Percentage of blood leaving the heart at each contraction (Integer value - percentage)
+* high_blood_pressure	- If the patient has hypertension (Boolean value - 0 for No and 1 for Yes)
+* platelets - Platelets in the blood (Numeric value - kiloplatelets/mL)
+* serum_creatinine - Level of serum creatinine in the blood (Numeric value - mg/dL)
+* serum_sodium - Level of serum sodium in the blood (Integer value - mEq/L)
+* sex	- Woman or man (Boolean value - 0 for Female and 1 for Male)
+* smoking	- If the patient smokes or not (Boolean value - 0 for No and 1 for Yes)
+* time - Follow-up period (Integer value - days)
+* DEATH_EVENT - If the patient deceased during the follow-up period (Boolean value - 0 for No and 1 for Yes)
+
+DEATH_EVENT is the dependent (outcome) variable while all other variables are independent variables.
+
+I reviewed the data in the CSV file and determined that all the rows were fully populated. There were also no missing values. My review also indicated that the contents of the data did not have any outliers. I removed columns: platelets and serum_sodium from the dataset. No other cleaning steps were needed for the dataset.
+
+Following are the cleanup steps and a quick look at the data after I performed the cleanup activities. 
+
+```{r}
+heart_df$platelets <- NULL
+heart_df$serum_sodium <- NULL
+head(heart_df)
+```
+
+## Problem statement  
+
+The problem statement of the project was to determine the factors that could contribute to the death by heart failure using historical data and to predict how the death by heart failure can be avoided by taking necessary steps. In order to address the problem statement, I focused on following research questions.
+
+1.	Does diabetes contribute to death due to heart failure? 
+2.	What impact does age have on the risk of death due to heart failure?
+3.	Does anemia contribute to death due to heart failure? 
+4.	Does the amount of creatinine phosphokinase in heart contribute to heart failure?
+5.	How does ejection fraction relate to the heart’s health?
+6.	Does high blood pressure contribute to death due to heart failure? 
+7.	What impact does gender have on the risk of death due to heart failure?
+8.	Could smoking increase the risk of death by heart failure?
+9.	What other factors could contribute to death due to heart failure?
+
+
+## Summary of how I addressed this problem statement 
+
+After cleaning the dataset, I conducted exploratory data analysis to understand how each variable impacts the DEATH_EVENT variable. In order to do so, I created mosaic plots and box plots as below.
+
+```{r}
+library('ggplot2')
+library('vcd')
+heart_factor_df <- heart_df
+heart_factor_df$DEATH_EVENT <- as.factor(heart_factor_df$DEATH_EVENT)
+
+anaemia_table <- structable(~ anaemia + DEATH_EVENT, data=heart_factor_df)
+mosaic(anaemia_table, main="Anaemia Vs. Death Event", pop=FALSE)
+labeling_cells(text = as.table(anaemia_table), margin = 0)(as.table(anaemia_table))
+
+diabetes_table <- structable(~ diabetes + DEATH_EVENT, data=heart_factor_df)
+mosaic(diabetes_table, main="Diabetes Vs. Death Event", pop=FALSE)
+labeling_cells(text = as.table(diabetes_table), margin = 0)(as.table(diabetes_table))
+
+hbp_table <- structable(~ high_blood_pressure + DEATH_EVENT, data=heart_factor_df)
+mosaic(hbp_table, main="High Blood Pressure Vs. Death Event", pop=FALSE)
+labeling_cells(text = as.table(hbp_table), margin = 0)(as.table(hbp_table))
+
+sex_table <- structable(~ sex + DEATH_EVENT, data=heart_factor_df)
+mosaic(sex_table, main="Sex Vs. Death Event", pop=FALSE)
+labeling_cells(text = as.table(sex_table), margin = 0)(as.table(sex_table))
+
+smoking_table <- structable(~ smoking + DEATH_EVENT, data=heart_factor_df)
+mosaic(smoking_table, main="Smoking Vs. Death Event", pop=FALSE)
+labeling_cells(text = as.table(smoking_table), margin = 0)(as.table(smoking_table))
+
+ggplot(heart_factor_df, aes(x=DEATH_EVENT, y=age)) + geom_point() + geom_boxplot() + ggtitle("Death Event Vs. Age") + xlab("Death Event") + ylab("Age")
+ggplot(heart_factor_df, aes(x=DEATH_EVENT, y=creatinine_phosphokinase)) + geom_point() + geom_boxplot() + ggtitle("Death Event Vs. Creatinine Phosphokinase") + xlab("Death Event") + ylab("Creatinine Phosphokinase")
+ggplot(heart_factor_df, aes(x=DEATH_EVENT, y=ejection_fraction)) + geom_point() + geom_boxplot() + ggtitle("Death Event Vs. Ejection Fraction") + xlab("Death Event") + ylab("Ejection Fraction")
+ggplot(heart_factor_df, aes(x=DEATH_EVENT, y=serum_creatinine)) + geom_point() + geom_boxplot() + ggtitle("Death Event Vs. Serum Creatinine") + xlab("Death Event") + ylab("Serum Creatinine")
+ggplot(heart_factor_df, aes(x=DEATH_EVENT, y=time)) + geom_point() + geom_boxplot() + ggtitle("Death Event Vs. Time") + xlab("Death Event") + ylab("Time")
+
+```
+
+By looking at the mosaic plots, it appears that all the variables: anaemia, diabetes, high blood pressure, sex, and smoking did not play significant role in death by heart failure since the distribution is almost same percentage for each value. 
+
+By looking at the box plots, it appears that older people, people with low ejection fraction, people with high serum creatinine, and people with lower follow up time were prone to death by heart failure compared to the opposite groups. The level of Creatinine Phosphokinase did not contribute as a factor to death by heart failure.
+
+I then calculated the correlation coefficient values of all variables with DEATH_EVENT variable.
+
+```{r}
+cor(heart_df$DEATH_EVENT, heart_df$age)
+cor(heart_df$DEATH_EVENT, heart_df$anaemia)
+cor(heart_df$DEATH_EVENT, heart_df$creatinine_phosphokinase)
+cor(heart_df$DEATH_EVENT, heart_df$diabetes)
+cor(heart_df$DEATH_EVENT, heart_df$ejection_fraction)
+cor(heart_df$DEATH_EVENT, heart_df$high_blood_pressure)
+cor(heart_df$DEATH_EVENT, heart_df$serum_creatinine)
+cor(heart_df$DEATH_EVENT, heart_df$sex)
+cor(heart_df$DEATH_EVENT, heart_df$smoking)
+cor(heart_df$DEATH_EVENT, heart_df$time)
+```
+Based on the correlation coefficients: 
+
+- age has low positive correlation with DEATH_EVENT 
+- anaemia has no correlation with DEATH_EVENT
+- creatinine_phosphokinase has no correlation with DEATH_EVENT
+- diabetes has no correlation with DEATH_EVENT
+- ejection_fraction has low negative correlation with DEATH_EVENT
+- high_blood_pressure has no correlation with DEATH_EVENT
+- serum_creatinine has low positive correlation with DEATH_EVENT
+- sex has no correlation with DEATH_EVENT
+- smoking has no correlation with DEATH_EVENT
+- time has high negative correlation with DEATH_EVENT
+
+Since the correlation coefficient can be trusted only with linear relationships, I created a logistic regression model and identified the statistical significance of the independent variables using p-values by calling summary() function.
+
+```{r}
+heart_glm <- glm(DEATH_EVENT ~ age + anaemia + creatinine_phosphokinase + diabetes + ejection_fraction + high_blood_pressure +  serum_creatinine + sex + smoking + time, data=heart_df, family = binomial)
+summary(heart_glm)
+```
+Based on the logistic regression model, age, ejection_fraction, serum_creatinine, and time variables were statistically significant variables since their p-values were less than 0.05. These same four variables showed correlation with DEATH_EVENT variable when the correlation coefficients were calculated.
+
+The next step I took was to split the dataset into training dataset and testing dataset with 80% and 20% sizes respectively. I then created a confusion matrix and calculated the accuracy of the model.
+
+
+```{r}
+data_split <- sample(1:nrow(heart_df), 0.8 * nrow(heart_df))
+train <- heart_df[data_split,]
+test <- heart_df[-data_split,]
+
+res <- predict(heart_glm, test, type="response")
+res <- predict(heart_glm, train, type="response")
+
+confmatrix <- table(Actual_Value = train$DEATH_EVENT, Predicted_Value = res > 0.5)
+confmatrix
+
+accuracy <- (confmatrix[[1,1]] + confmatrix[[2,2]]) / sum(confmatrix)
+accuracy
+
+```
+
+The accuracy of the logistic regression model was 83.68%. 
+
+I also used K Nearest Neighbors algorithm to predict the outcome. Since the dataset had 299 records, I used the K value of 17 which is an odd number and is close to the square root of 299. I then created a confusion matrix and calculated the accuracy of the model.
+
+```{r}
+target_category <- heart_df[data_split,11]
+test_category <- heart_df[-data_split,11]
+
+library(class)
+test_pred <- knn(train,test,cl=target_category,k=17)
+
+confmatrix <- table(test_category,test_pred)
+confmatrix
+
+accuracy <- (confmatrix[[1,1]] + confmatrix[[2,2]]) / sum(confmatrix)
+accuracy
+```
+
+The accuracy of the K Nearest Neighbors Algorithm is 76.67%. 
+
+## Summary of interesting insights from the analysis 
+
+When I looked at the mosaic plots and box plots, I noticed that variables: age, ejection_fraction, serum_creatinine, and time showed significant impact on the DEATH_EVENT variable. 
+
+When I calculated the correlation coefficient of all variables with DEATH_EVENT variable, the same four variables: age, ejection_fraction, serum_creatinine, and time showed some level of correlation with DEATH_EVENT variable. 
+
+When I used summary() function for the logistic regression model, the same four variables: age, ejection_fraction, serum_creatinine, and time showed statistical significance through low p-values. It is interesting to see that the same four variables appeared in all three methods, which confirms that they really were the appropriate variables that statistically affected the DEATH_EVENT variable.
+
+When we use our own understanding, we always think of parameters such as high blood pressure, cholesterol level, diet, and exercise as contributing factors for deaths due to heart failure. It is surprising that high blood pressure did not show any effects in my analysis. The data collected for this analysis is the data of patients that have had an incident related to heart, and what factors could impact survival after the incident. In that case, it makes sense for doctors to use this model to elongate the life of patients that have had an heart incident by looking at the risk factors. 
+
+## Implications to the consumer (target audience)  
+
+While working on the project, I realized that the target audience for this project are doctors and the patients who have already had a heart related medical incident. For such patients, doctors can use these prediction models to determine how to elongate the lives of the patients or prevent their death by looking at the factors. Age of the patient is an important factor. Older people are at higher risk, so they should be given higher level of care. People with low ejection fraction are at higher risk, so the doctors should prescribe medicines to these patients to increase their ejection fraction. People with high serum creatinine are at higher risk also, so the doctors should suggest patients to follow directions to reduce the serum creatinine levels. Some ways to do that are to drink more water, limit protein intake, limit sodium intake, and increase fiber intake. The longer the follow up time, there are more chances of the patient to survive. By taking these precautions, the doctors can help patients survive for longer time. 
+
+## Limitations of analysis and improvement opportunities
+
+One of the limitations of my analysis was the lack of data available. The dataset included only 299 rows, but this was the most appropriate dataset for my analysis. It would be great if more data is collected and made available for research, so that better models with more accuracy can be created. 
+
+Another limitation of my analysis was that the available data was of patients who have already had a heart incident. The analysis would help doctors to elongate the life of such patients by looking at the factors. Several people who are at high risk of getting heart attack do not know that there are ways that can be used to prevent the heart attack. Collecting data of such people that have not had a heart incident yet, and conducting analysis on the data will not only benefit the people at risk, but also the overall community. 
+
