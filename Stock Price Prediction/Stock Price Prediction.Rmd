@@ -7,7 +7,7 @@ output: word_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-Get stock data for the past three years using getSymbols() fuction in quantmod package
+Get stock data for the past three years using getSymbols() function in quantmod package
 
 ```{r}
 #Load library
@@ -33,7 +33,7 @@ stock_data <- Cl(stock_data)
 head(stock_data)
 ```
 
-Analyze the stock using technical indicators such as  Simple Moving Average, Bollinger bands, Relative Strength Index, and Moving Average Convergence Divergence 
+Analyze the stock using technical indicators such as Simple Moving Average, Bollinger bands, Relative Strength Index, and Moving Average Convergence Divergence 
 
 ```{r}
 #stock charting
@@ -240,43 +240,43 @@ Find the best model
 
 ```{r}
 Model = c('fit_garch_1','fit_garch_2','fit_garch_3','fit_garch_4','fit_garch_5','fit_garch_6','fit_garch_7','fit_garch_8')
-AIC = c(-5.4749, -5.4899, -5.4854, -5.4879, -5.4879, -5.4837, -5.4854, -5.4845)
+AIC = c(-5.5575, -5.5645, -5.5616, -5.5800, -5.5643, -5.5588, -5.5646, -5.5767)
 (model <- data.frame(Model,AIC))
 
 which.min(model[,'AIC'])
 ```
-Fit the best model (model 2: ARMA(1,1) GARCH(1,1) model with Student t-distribution)
+Fit the best model (Model 4: Fit ARMA(1,2) GARCH(1,1) model with Student t-distribution)
 
 ```{r}
-fit_garch_2
+fit_garch_4
 ```
 Persistence of volatility
 
 ```{r}
-persistence(fit_garch_2)    
+persistence(fit_garch_4)    
 ```
-Plot all graphs for model 2
+Plot all graphs for model 4
 
 ```{r}
 
-plot(fit_garch_2,which='all')   
+plot(fit_garch_4,which='all')   
 ```
 Model convergence
 
 ```{r}
-print(convergence(fit_garch_2))  
+print(convergence(fit_garch_4))  
 ```
 Forecast the data using GARCH model
 
 ```{r}
-for_cast1 <-ugarchforecast(fit_garch_2,data=data,n.ahead=100)
+for_cast1 <-ugarchforecast(fit_garch_4,data=data,n.ahead=100)
 for_cast1
 ```
 
 Rolling forecast
 
 ```{r}
-fit_roll <- ugarchfit(garch_5, data= stock_log[1:size], out.sample = 400)
+fit_roll <- ugarchfit(garch_4, data= stock_log[1:size], out.sample = 400)
 fore_roll <- ugarchforecast(fit_roll, n.ahead=100, n.roll = 400)
 fore_roll
 ```
