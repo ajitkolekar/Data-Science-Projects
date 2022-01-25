@@ -1,0 +1,320 @@
+---
+title: "Stock Price Prediction"
+author: "Ajit Kolekar"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Get stock data for the past three years using getSymbols() fuction in quantmod package
+
+```{r}
+#Load library
+library(quantmod)
+
+# Set start date to a date three year's in the past from today
+start_date <- Sys.Date() - 1095    #Three years
+
+# Set end date to yesterday's date since the market might still be open today
+end_date <- Sys.Date() - 1
+
+# Set the symbol of the stock to analyze and predict
+symbol <- "MSFT"
+
+stock_df <- NULL
+
+# Get stock data
+stock_data <- getSymbols(Symbols = symbol, src = "yahoo", from = start_date, 
+                        to = end_date, auto.assign = FALSE)
+stock_data <- Cl(stock_data)
+
+# Check the first few rows of stock data
+head(stock_data)
+```
+
+Analyze the stock using technical indicators such as  Simple Moving Average, Bollinger bands, Relative Strength Index, and Moving Average Convergence Divergence 
+
+```{r}
+#stock charting
+chart_Series(stock_data, col = "black")
+add_SMA(n = 100, on = 1, col = "red")
+add_SMA(n = 20, on = 1, col = "black")
+add_RSI(n = 14, maType = "SMA")
+add_BBands(n = 20, maType = "SMA", sd = 1, on = -1)
+add_MACD(fast = 12, slow = 25, signal = 9, maType = "SMA", histogram = TRUE)
+
+```
+
+Convert the stock data into log transformation.
+
+```{r}
+### Log tranformation stock data
+stock_log <- log(stock_data)
+head(stock_log, n = 10)
+```
+
+Plot the log data
+
+
+```{r}
+plot(stock_log, main = "log stock data chart")
+```
+
+Plot auto correlation function of the log data
+
+```{r}
+acf_log <- acf(stock_log, lag.max = 500)
+```
+
+Plot partial auto correlation function of the log data
+
+```{r}
+pacf_log <- pacf(stock_log, lag.max = 500)
+```
+
+Plot the log transformed data will be differenced by 1 lag.
+
+```{r}
+### difference logged data
+stock_diff <- diff(stock_log, lag = 1)
+
+stock_diff <- na.locf(stock_diff, na.rm = TRUE,
+                     fromLast = TRUE)
+plot(stock_diff)
+```
+
+Split the data into training data and testing data. The last 100 days will be used as testing data. 
+
+```{r}
+### splitting into train and test data
+library(caTools)
+size <- length(stock_diff) - 100
+train_data <- stock_diff[1:size]
+```
+# ARIMA Model
+
+Build the ARIMA model
+
+```{r}
+library(forecast)
+set.seed(123)
+arima_model <- auto.arima(train_data, stationary = TRUE, ic = c("aicc", "aic", "bic"), 
+                          trace = TRUE)
+
+```
+
+Display the summary details of the best ARIMA model
+
+```{r}
+summary(arima_model)
+```
+
+Diagnostic checking of the best ARIMA model
+
+```{r}
+checkresiduals(arima_model)
+```
+
+Fit the model into the training data set.
+
+```{r}
+arima <- arima(train_data, order = c(1, 0, 0))
+summary(arima)
+
+```
+
+Forecast the data using ARIMA model
+
+```{r}
+forecast1 <- forecast(arima, h = 100)
+plot(forecast1)
+```
+
+```{r}
+arima <- arima(stock_log[1:size], order = c(1, 0, 0))
+summary(arima)
+```
+
+Plot the forecast
+
+
+```{r}
+forecast_ori <- forecast(arima, h = 100)
+a <- ts(stock_log)
+forecast_ori %>% autoplot() + autolayer(a)
+```
+
+
+# GARCH Model
+
+Model 1: Fit ARMA(0,0) GARCH(1,1) model with Student t-distribution
+
+```{r}
+library(rugarch)
+garch_1 <- ugarchspec(mean.model = list(armaOrder=c(0,0)),variance.model = list(model = 'eGARCH', 
+                          garchOrder = c(1, 1)),distribution = 'std')
+fit_garch_1 <- ugarchfit(spec = garch_1, data= stock_diff)
+fit_garch_1
+```
+
+
+Model 2: Fit ARMA(1,1) GARCH(1,1) model with Student t-distribution
+
+
+```{r}
+garch_2 <- ugarchspec(mean.model = list(armaOrder=c(1,1)),variance.model = list(model = 'eGARCH', 
+                          garchOrder = c(1, 1)),distribution = 'std')
+
+fit_garch_2 <- ugarchfit(spec = garch_2, data= stock_diff)
+fit_garch_2
+```
+
+Model 3: Fit ARMA(2,2) GARCH(1,1) model with Student t-distribution
+
+
+```{r}
+garch_3 <- ugarchspec(mean.model = list(armaOrder=c(2,2)),variance.model = list(model = 'eGARCH', 
+                          garchOrder = c(1, 1)),distribution = 'std')
+
+fit_garch_3 <- ugarchfit(spec = garch_3, data= stock_diff)
+fit_garch_3
+```
+
+Model 4: Fit ARMA(1,2) GARCH(1,1) model with Student t-distribution
+
+
+```{r}
+garch_4 <- ugarchspec(mean.model = list(armaOrder=c(1,2)),variance.model = list(model = 'eGARCH', 
+                          garchOrder = c(1, 1)),distribution = 'std')
+
+fit_garch_4 <- ugarchfit(spec = garch_4, data=stock_diff)
+fit_garch_4
+```
+
+Model 5: Fit ARMA(2,1) GARCH(1,1) model with Student t-distribution
+
+
+```{r}
+garch_5 <- ugarchspec(mean.model = list(armaOrder=c(2,1)),variance.model = list(model = 'eGARCH', 
+                          garchOrder = c(1, 1)),distribution = 'std')
+
+fit_garch_5 <- ugarchfit(spec = garch_5, data=stock_diff)
+fit_garch_5
+```
+
+Model 6: Fit ARMA(3,1) GARCH(1,1) model with Student t-distribution
+
+
+```{r}
+garch_6 <- ugarchspec(mean.model = list(armaOrder=c(3,1)),variance.model = list(model = 'eGARCH', 
+                          garchOrder = c(1, 1)),distribution = 'std')
+
+fit_garch_6 <- ugarchfit(spec = garch_6, data=stock_diff)
+fit_garch_6
+```
+
+Model 7: Fit ARMA(3,2) GARCH(1,1) model with Student t-distribution
+
+
+```{r}
+garch_7 <- ugarchspec(mean.model = list(armaOrder=c(3,2)),variance.model = list(model = 'eGARCH', 
+                          garchOrder = c(1, 1)),distribution = 'std')
+
+fit_garch_7 <- ugarchfit(spec = garch_7, data=stock_diff)
+fit_garch_7
+```
+
+Model 8: Fit ARMA(1,3) GARCH(1,1) model with Student t-distribution
+
+
+```{r}
+garch_8 <- ugarchspec(mean.model = list(armaOrder=c(1,3)),variance.model = list(model = 'eGARCH', 
+                          garchOrder = c(1, 1)),distribution = 'std')
+
+fit_garch_8 <- ugarchfit(spec = garch_8, data=stock_diff)
+fit_garch_8
+```
+
+Find the best model 
+
+```{r}
+Model = c('fit_garch_1','fit_garch_2','fit_garch_3','fit_garch_4','fit_garch_5','fit_garch_6','fit_garch_7','fit_garch_8')
+AIC = c(-5.4749, -5.4899, -5.4854, -5.4879, -5.4879, -5.4837, -5.4854, -5.4845)
+(model <- data.frame(Model,AIC))
+
+which.min(model[,'AIC'])
+```
+Fit the best model (model 2: ARMA(1,1) GARCH(1,1) model with Student t-distribution)
+
+```{r}
+fit_garch_2
+```
+Persistence of volatility
+
+```{r}
+persistence(fit_garch_2)    
+```
+Plot all graphs for model 2
+
+```{r}
+
+plot(fit_garch_2,which='all')   
+```
+Model convergence
+
+```{r}
+print(convergence(fit_garch_2))  
+```
+Forecast the data using GARCH model
+
+```{r}
+for_cast1 <-ugarchforecast(fit_garch_2,data=data,n.ahead=100)
+for_cast1
+```
+
+Rolling forecast
+
+```{r}
+fit_roll <- ugarchfit(garch_5, data= stock_log[1:size], out.sample = 400)
+fore_roll <- ugarchforecast(fit_roll, n.ahead=100, n.roll = 400)
+fore_roll
+```
+
+Plot the rolling forecast with unconditional 1-Sigma bands
+
+```{r}
+plot(fore_roll,which=1)
+```
+
+Retrieve data and remove the reference to the stock symbol from column names and add Date as a separate column using the index. 
+
+```{r}
+start_date <- Sys.Date() - 1095    #Three years
+end_date <- Sys.Date() - 1
+
+symbol <- "MSFT"
+stock_df <- NULL
+
+
+getSymbols(symbol, verbose = TRUE, src = "yahoo", 
+           from=start_date, to=end_date)
+# stock_df = as.data.frame(get(symbol))
+
+temp_df = as.data.frame(get(symbol))
+temp_df$Date = row.names(temp_df)
+row.names(temp_df) = NULL
+colnames(temp_df) = c("Open", "High", "Low", "Close", 
+                      "Volume", "Adjusted", "Date")
+temp_df = temp_df[c("Date", "Open", "High", 
+                    "Low", "Close", "Volume", "Adjusted")]
+stock_df = rbind(stock_df, temp_df)
+
+head(stock_df)
+```
+
+Save the data in CSV file for the third model LSTM to be coded using Python.
+
+```{r}
+write.csv(stock_df, 'stock_df.csv')
+```
