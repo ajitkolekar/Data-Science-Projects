@@ -1,0 +1,3 @@
+<h2 align="center">Twitter Sentiment Analysis</h2>
+<p align="justify">There are around 400 million Twitter users and close to half of them use Twitter daily. Around 200 billion tweets are sent every year. Several businesses use Twitter to interact with customers, to create business networks, and to keep track of their competitors. Sentiment Analysis can be very helpful to generate sentiment data from these tweets and understand customer’s opinion about the business. Machine learning models are great tools for creating sentiment analysis. By using the sentiment data, businesses can take necessary steps to become successful.
+</p>
